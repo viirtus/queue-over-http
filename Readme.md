@@ -12,7 +12,7 @@ Messages are passed directly to your endpoint in a HTTP-request!
 **You want to simplify consumers balancing.**  
 
 This project allows you to translate balancing tasks from your backend to existing L4/L7 balancers in front of consumers. Messages are stateless and can easily 
-be processed by different services behind balancer. Latency from Queue-Over-Http in between of broker and consumers are extremely low! 
+be consumed by different services behind balancer. Latency from Queue-Over-Http in between of broker and consumers are extremely low! 
 
 **You planning to use any web hooks (Slack, Jira, etc...)**
 
@@ -107,6 +107,7 @@ After doing request, check `persist`. You must find almost same payload in `firs
 By default, message will be dispatched as a POST request. You can configure HTTP method using `subscriptionMethod.method` field.
 
 Also, feel free to pass any additional data (such as auth) in each request using `subscriptionMethod.additionalHeaders`. 
+
 7. Write some messages to `test` Kafka broker topic using some producer.
 8. Watch for endpoint output and enjoy! 
 
