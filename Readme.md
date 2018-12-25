@@ -205,6 +205,22 @@ GET 127.0.0.1:8080/broker/subscription
 
 Updating consumers inflight are not supported yet. For updating topics for consumer or subscription method config you must unsubscribe first and subscribe again with new values.
 
+## HTTP-message format
+
+Each message dispatched over HTTP contains next standard headers:
+- `QOH-Broker` - `string` - broker name from which message came
+- `QOH-Consumer` - `string` - consumer identification in form of "${consumer.id}_${consumer.group.id}".
+- `QOH-Topic` - `string` - topic name from witch message came.
+- `QOH-Partition` - `string` - partition of topic, if applicable.
+- `QOH-Message-Key` - `string` - partition message key, if applicable.
+- `User-Agent` - `string` - always like `Queue-Over-Http`
+
+In depends on selected HTTP-method (`Consumer.subscriptionMethod.method`), message can be dispatched in request body (for POST, PUT, PATCH, DELETE) requests, or as a query string parameter.
+ Parameter name is define by `Consumer.subscriptionMethod.queryParamKey` which is `message` by default. 
+
+Any additional headers can be specified in `Consumer.subscriptionMethod.additionalHeaders`. These headers are included in each HTTP-request for consumer.
+ For example, you can specify `Content-Type: application/json` or any others.
+
 ## Configuration
 
 All application configuration is done by `application.yml` file.
@@ -228,5 +244,4 @@ List of brokers to work with. Consumer can subscribe only for one specified here
 * `app.brokers[].origin` - `<object>` - any broker-specific key-value configuration.
  [Kafka available options](https://github.com/apache/kafka/blob/2.0/clients/src/main/java/org/apache/kafka/clients/consumer/ConsumerConfig.java).
  For Kafka hardcoded values for key and value serializers to `LongDeserializer` and `StringDeserializer`. 
-  
 
