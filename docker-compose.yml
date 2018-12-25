@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     command: --debug
     ports:
-      - "8080:81"
+      - "8080:80"
     volumes:
       - ./application.yml:/application.yml
       - ./persist:/persist
