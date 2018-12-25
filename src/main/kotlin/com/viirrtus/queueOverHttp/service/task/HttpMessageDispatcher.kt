@@ -42,7 +42,7 @@ class HttpMessageDispatcher : Closeable {
     private val USER_AGENT = "Queue-Over-Http"
     private val CONSUMER_HEADER = "QOH-Consumer"
     private val TOPIC_HEADER = "QOH-Topic"
-    private val PARTITION_HEADER = "QOH-Topic"
+    private val PARTITION_HEADER = "QOH-Partition"
     private val BROKER_HEADER = "QOH-Broker"
     private val KEY_HEADER = "QOH-Message-Key"
 
