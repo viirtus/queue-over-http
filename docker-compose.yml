@@ -1,0 +1,12 @@
+version: "2"
+
+services:
+  app:
+    image: viirrtus/queue-over-http:0.1.0
+    restart: unless-stopped
+    command: --debug
+    ports:
+      - "8080:81"
+    volumes:
+      - ./application.yml:/application.yml
+      - ./persist:/persist

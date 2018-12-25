@@ -1,0 +1,64 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.10'
+    id 'org.springframework.boot' version '2.0.3.RELEASE'
+}
+ext.kotlin_version = '1.3.10'
+ext.spring_boot_version = '2.0.3.RELEASE'
+ext.spring_fw_version = '5.0.4.RELEASE'
+
+group 'com.viirrtus'
+version '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: "$spring_boot_version"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "$spring_boot_version"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version: "$spring_boot_version"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: "$spring_boot_version"
+    compile group: 'org.springframework', name: 'spring-test', version: "$spring_fw_version"
+
+    compile group: 'org.apache.commons', name: 'commons-text', version: '1.4'
+    compile 'org.mockito:mockito-core:2.16.0'
+    compile group: 'junit', name: 'junit', version: '4.12'
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
+    compile "io.reactivex.rxjava2:rxjava:2.1.16"
+
+    compile group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.0.1'
+
+    compile 'org.apache.httpcomponents:httpasyncclient:4.1.4'
+
+    compile group: 'net.jpountz.lz4', name: 'lz4', version: '1.3.0'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+task buildArtifacts(dependsOn: bootJar) {
+    group 'Build'
+    doLast {
+        delete "artifacts/"
+        copy {
+            from bootJar
+            into "artifacts"
+            rename { String fileName ->
+                fileName.replace("-" + bootJar.getVersion(), "")
+            }
+        }
+
+        copy {
+            from "application.yml"
+            into "artifacts"
+
+            rename '(.+)', '$1.example'
+        }
+    }
+}

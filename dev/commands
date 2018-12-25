@@ -1,0 +1,11 @@
+cd /opt/bitnami/kafka
+
+bin/kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic test
+
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+
+echo "for i in $(seq 1 100000); do echo $i; done" > input
+
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test-3 < input
+
+bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group test
