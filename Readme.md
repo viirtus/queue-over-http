@@ -213,6 +213,7 @@ Each message dispatched over HTTP contains next standard headers:
 - `QOH-Topic` - `string` - topic name from witch message came.
 - `QOH-Partition` - `string` - partition of topic, if applicable.
 - `QOH-Message-Key` - `string` - partition message key, if applicable.
+- `QOH-Message-Number` - `long` - message number from broker.
 - `User-Agent` - `string` - always like `Queue-Over-Http`
 
 In depends on selected HTTP-method (`Consumer.subscriptionMethod.method`), message can be dispatched in request body (for POST, PUT, PATCH, DELETE) requests, or as a query string parameter.

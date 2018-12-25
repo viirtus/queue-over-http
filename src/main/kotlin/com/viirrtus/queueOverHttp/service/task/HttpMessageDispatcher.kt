@@ -45,6 +45,7 @@ class HttpMessageDispatcher : Closeable {
     private val PARTITION_HEADER = "QOH-Partition"
     private val BROKER_HEADER = "QOH-Broker"
     private val KEY_HEADER = "QOH-Message-Key"
+    private val NUMBER_HEADER = "QOH-Message-Number"
 
     init {
         //TODO externalize
@@ -130,5 +131,6 @@ class HttpMessageDispatcher : Closeable {
         request.addHeader(PARTITION_HEADER, message.queue.associatedPartition.partition)
         request.addHeader(BROKER_HEADER, message.consumer.broker)
         request.addHeader(KEY_HEADER, message.message.key)
+        request.addHeader(NUMBER_HEADER, message.message.number.toString())
     }
 }
