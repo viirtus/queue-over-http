@@ -13,7 +13,6 @@ import org.apache.kafka.common.network.Selectable
 import org.apache.kafka.common.utils.Time
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.lang.invoke.MethodType
 import java.time.Duration
 
 class InterruptedKafkaConsumer<K, V>(configs: MutableMap<String, Any>?) : KafkaConsumer<K, V>(configs) {
@@ -38,30 +37,29 @@ class InterruptedKafkaConsumer<K, V>(configs: MutableMap<String, Any>?) : KafkaC
     private var pollInterrupted = false
 
     init {
-        val lookup = MethodHandles.privateLookupIn(KafkaConsumer::class.java, MethodHandles.lookup())
+        fun findPrivateMethod(name: String, vararg args: Class<*>?): MethodHandle {
+            val method = KafkaConsumer::class.java.getDeclaredMethod(name, *args)
+            method.isAccessible = true
+            return MethodHandles.lookup().unreflect(method)
+        }
 
-        val acquireAndEnsureOpenMethodType = MethodType.methodType(Void.TYPE)
-        acquireAndEnsureOpen = lookup.findVirtual(KafkaConsumer::class.java, "acquireAndEnsureOpen", acquireAndEnsureOpenMethodType)
+        fun findPrivateField(name: String): Any {
+            val field = KafkaConsumer::class.java.getDeclaredField(name)
+            field.isAccessible = true
+            return field.get(this)
+        }
 
-        val updateAssignmentMetadataIfNeededMethodType = MethodType.methodType(Boolean::class.javaPrimitiveType, Long::class.javaPrimitiveType)
-        updateAssignmentMetadataIfNeeded = lookup.findVirtual(KafkaConsumer::class.java, "updateAssignmentMetadataIfNeeded", updateAssignmentMetadataIfNeededMethodType)
+        acquireAndEnsureOpen = findPrivateMethod("acquireAndEnsureOpen")
+        updateAssignmentMetadataIfNeeded = findPrivateMethod("updateAssignmentMetadataIfNeeded", Long::class.javaPrimitiveType)
+        remainingTimeAtLeastZero = findPrivateMethod("remainingTimeAtLeastZero", Long::class.javaPrimitiveType, Long::class.javaPrimitiveType)
+        pollForFetches = findPrivateMethod("pollForFetches", Long::class.javaPrimitiveType)
+        release = findPrivateMethod("release")
 
-        val remainingTimeAtLeastZeroMethodType = MethodType.methodType(Long::class.javaPrimitiveType, Long::class.javaPrimitiveType, Long::class.javaPrimitiveType)
-        remainingTimeAtLeastZero = lookup.findVirtual(KafkaConsumer::class.java, "remainingTimeAtLeastZero", remainingTimeAtLeastZeroMethodType)
-
-        val pollForFetchesMethodType = MethodType.methodType(java.util.Map::class.java, Long::class.javaPrimitiveType)
-        pollForFetches = lookup.findVirtual(KafkaConsumer::class.java, "pollForFetches", pollForFetchesMethodType)
-
-        val releaseMethodType = MethodType.methodType(Void.TYPE)
-        release = lookup.findVirtual(KafkaConsumer::class.java, "release", releaseMethodType)
-
-        val subscriptionsField = KafkaConsumer::class.java.getDeclaredField("subscriptions")
-        subscriptionsField.isAccessible = true
-        subscriptions = subscriptionsField.get(this) as SubscriptionState
-
-        val clientField = KafkaConsumer::class.java.getDeclaredField("client")
-        clientField.isAccessible = true
-        client = clientField.get(this) as ConsumerNetworkClient
+        client = findPrivateField("client") as ConsumerNetworkClient
+        subscriptions = findPrivateField("subscriptions") as SubscriptionState
+        time = findPrivateField("time") as Time
+        fetcher = findPrivateField("fetcher") as Fetcher<K, V>
+        interceptors = findPrivateField("interceptors") as ConsumerInterceptors<K, V>
 
         val kafkaClientField = client.javaClass.getDeclaredField("client")
         kafkaClientField.isAccessible = true
@@ -71,20 +69,6 @@ class InterruptedKafkaConsumer<K, V>(configs: MutableMap<String, Any>?) : KafkaC
         selectorField.isAccessible = true
 
         clientSelector = selectorField.get(kafkaClient) as Selectable
-
-        val timeField = KafkaConsumer::class.java.getDeclaredField("time")
-        timeField.isAccessible = true
-        time = timeField.get(this) as Time
-
-        val fetcherField = KafkaConsumer::class.java.getDeclaredField("fetcher")
-        fetcherField.isAccessible = true
-        fetcher = fetcherField.get(this) as Fetcher<K, V>
-
-        val interceptorsField = KafkaConsumer::class.java.getDeclaredField("interceptors")
-        interceptorsField.isAccessible = true
-        interceptors = interceptorsField.get(this) as ConsumerInterceptors<K, V>
-
-
     }
 
     override fun poll(timeout: Duration): ConsumerRecords<K, V> {

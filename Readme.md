@@ -113,11 +113,12 @@ Also, feel free to pass any additional data (such as auth) in each request using
 
 ## Building
 
-You can build Queue-Over-Http from sources with `gradlew bootArtifacts` command. Built jar will be in `artifacts`.
+You can build Queue-Over-Http from sources with `gradlew bootArtifacts` command. Built jar will be in `artifacts`. 
 
 ### Running JAR
 
 As a regular JAR, `java -jar -Dspring.profiles.active=default`. Config file `application.yml` must be in the same dir where jar. You can specify `--debug` flag to enable debug output (make sure `logging.level.com.viirrtus.queueOverHttp: DEBUG` are set).
+Service requires JRE 8+ for working.
 
 ## Usage 
 
