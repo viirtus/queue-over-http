@@ -5,6 +5,7 @@ import com.viirrtus.queueOverHttp.config.AppConfig
 import com.viirrtus.queueOverHttp.dto.Consumer
 import com.viirrtus.queueOverHttp.queue.NativeQueueAdapter
 import com.viirrtus.queueOverHttp.queue.PartitionQueueStatus
+import com.viirrtus.queueOverHttp.service.exception.ConsumerUnavailableException
 import com.viirrtus.queueOverHttp.service.exception.IllegalConsumerConfigException
 import com.viirrtus.queueOverHttp.service.persistence.PersistenceAdapterInterface
 import com.viirrtus.queueOverHttp.util.currentTimeMillis
@@ -81,10 +82,15 @@ class BrokerService(
     fun unsubscribe(consumer: Consumer, timeout: Long, timeUnit: TimeUnit) {
         val timeStart = currentTimeMillis()
 
-        val associatedManipulator = shutdown(consumer, timeout, timeUnit)
-        associatedManipulator.unsubscribe(consumer)
+        try {
+            val associatedManipulator = shutdown(consumer, timeout, timeUnit)
+            associatedManipulator.unsubscribe(consumer)
 
-        persistenceAdapter.remove(consumer)
+            persistenceAdapter.remove(consumer)
+        } catch (e: Exception) {
+            throw ConsumerUnavailableException("Cannot unsubscribe consumer: ${e.message}")
+        }
+
         logger.info("Unsubscribe $consumer in ${currentTimeMillis() - timeStart} ms")
     }
 
@@ -182,7 +188,7 @@ class BrokerService(
      * Shutdown all registered consumers.
      */
     fun shutdown() {
-        logger.info("Start graceful shutdown...")
+        logger.info("Start shutdown...")
 
         val consumers = list()
         for (consumer in consumers) {

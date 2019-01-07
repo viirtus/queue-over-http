@@ -10,7 +10,6 @@ import com.viirrtus.queueOverHttp.util.currentTimeMillis
 import com.viirrtus.queueOverHttp.util.hiResCurrentTimeNanos
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -61,10 +60,8 @@ class QueueDrainer(
         val disposableContainer = CompositeDisposable()
         disposableContainer.addAll(
                 consumerQueueGroup.onQueueAddSubject
-                        .subscribeOn(Schedulers.io())
                         .subscribe(this::onNewQueueFound),
                 consumerQueueGroup.onQueueRemoveSubject
-                        .subscribeOn(Schedulers.io())
                         .subscribe(this::onQueueRevoked)
         )
 
@@ -122,14 +119,19 @@ class QueueDrainer(
             var wasWork = false
 
             //low produce rate queues goings first for minimize latency
-            queues.sortBy { it.size }
-
+            //we must capture current state befor sorting to avoid sort exception
+            val sortMap = queues.associateWith { it.size }
+            queues.sortBy { sortMap[it] }
             for (queue in queues) {
                 val startTimeNanos = hiResCurrentTimeNanos()
                 while (true) {
                     val leftTimeNanos = queueTimeQuantNanos - hiResCurrentTimeNanos() + startTimeNanos
                     val status = queue.status
-                    if (leftTimeNanos < 0 || status == PartitionQueueStatus.EMPTY || status == PartitionQueueStatus.LOCKED) {
+                    if (leftTimeNanos < 0
+                            || status == PartitionQueueStatus.EMPTY
+                            || status == PartitionQueueStatus.LOCKED
+                            || status == PartitionQueueStatus.REVOKED
+                    ) {
                         break
                     }
 

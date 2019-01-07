@@ -4,19 +4,13 @@ import com.viirrtus.queueOverHttp.config.BrokerConfig
 import com.viirrtus.queueOverHttp.dto.Consumer
 import com.viirrtus.queueOverHttp.dto.Topic
 import com.viirrtus.queueOverHttp.queue.*
-import org.apache.kafka.clients.consumer.CommitFailedException
+import com.viirrtus.queueOverHttp.util.currentTimeMillis
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.consumer.OffsetAndMetadata
-import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.errors.AuthenticationException
-import org.apache.kafka.common.errors.AuthorizationException
-import org.apache.kafka.common.errors.InterruptException
 import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.regex.Pattern
 
 
@@ -104,11 +98,29 @@ class KafkaNativeQueueAdapter(brokerConfig: BrokerConfig) : NativeQueueAdapter<I
         )
     }
 
+    /**
+     * Interrupt current consumer and unsubscribe it.
+     * We must wait here some time for assuring that
+     * unsubscribe completed.
+     */
     override fun unsubscribe(consumer: Consumer) {
-        val kafkaConsumer = consumers.find { it.group.consumer.same(consumer) }
+        val kafkaConsumer = consumers.find { it.group.consumer.same(consumer) } as KafkaNativeConsumerWrapper?
                 ?: throw NoConsumerFoundException("No registered consumer found.")
 
-        (kafkaConsumer as KafkaNativeConsumerWrapper).unsubscribe()
+        kafkaConsumer.unsubscribe()
+
+        val waitStartTime = currentTimeMillis()
+        while (currentTimeMillis() - waitStartTime < 10_000 && !kafkaConsumer.isDead) {
+            logger.info("Waiting until consumer $consumer unsubscribe...")
+            Thread.sleep(10)
+        }
+
+        if (!kafkaConsumer.isDead) {
+            logger.warn("Consumer $consumer is still active!")
+            throw ConsumerUnavailableException("Kafka consumer $consumer not answering.")
+        }
+
+        consumers.remove(kafkaConsumer)
     }
 
     override fun produce(message: Message, topic: Topic) {

@@ -100,7 +100,7 @@ abstract class DispatchTask<T>(
      */
     protected open fun onTaskFail(throwable: Throwable) {
         logger.error("Task $this failed (retryCount=$retryCount, elapsedTime=${elapsedTimeMs()} ms)", throwable)
-        retry()
+        retry(subscriptionMethod.delayOnErrorMs)
     }
 
     /**

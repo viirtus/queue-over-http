@@ -13,6 +13,7 @@ import org.apache.http.impl.nio.client.HttpAsyncClients
 import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor
 import org.apache.http.impl.nio.reactor.IOReactorConfig
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpMethod
 import java.io.Closeable
 import java.net.URI
@@ -25,27 +26,6 @@ import kotlin.reflect.full.createInstance
  */
 class HttpMessageDispatcher : Closeable {
     private val client: CloseableHttpAsyncClient
-    private val methodToClass = mapOf(
-            //has body part
-            HttpMethod.POST to HttpPost::class,
-            HttpMethod.PUT to HttpPut::class,
-            HttpMethod.PATCH to HttpPatch::class,
-            HttpMethod.DELETE to HttpDelete::class,
-
-            //without body part
-            HttpMethod.GET to HttpGet::class,
-            HttpMethod.HEAD to HttpHead::class,
-            HttpMethod.OPTIONS to HttpOptions::class,
-            HttpMethod.TRACE to HttpTrace::class
-    )
-
-    private val USER_AGENT = "Queue-Over-Http"
-    private val CONSUMER_HEADER = "QOH-Consumer"
-    private val TOPIC_HEADER = "QOH-Topic"
-    private val PARTITION_HEADER = "QOH-Partition"
-    private val BROKER_HEADER = "QOH-Broker"
-    private val KEY_HEADER = "QOH-Message-Key"
-    private val NUMBER_HEADER = "QOH-Message-Number"
 
     init {
         //TODO externalize
@@ -94,6 +74,7 @@ class HttpMessageDispatcher : Closeable {
             }
 
         })
+
         return future
     }
 
@@ -132,5 +113,31 @@ class HttpMessageDispatcher : Closeable {
         request.addHeader(BROKER_HEADER, message.consumer.broker)
         request.addHeader(KEY_HEADER, message.message.key)
         request.addHeader(NUMBER_HEADER, message.message.number.toString())
+    }
+
+    companion object {
+        private val methodToClass = mapOf(
+                //has body part
+                HttpMethod.POST to HttpPost::class,
+                HttpMethod.PUT to HttpPut::class,
+                HttpMethod.PATCH to HttpPatch::class,
+                HttpMethod.DELETE to HttpDelete::class,
+
+                //without body part
+                HttpMethod.GET to HttpGet::class,
+                HttpMethod.HEAD to HttpHead::class,
+                HttpMethod.OPTIONS to HttpOptions::class,
+                HttpMethod.TRACE to HttpTrace::class
+        )
+
+        const val USER_AGENT = "Queue-Over-Http"
+        const val CONSUMER_HEADER = "QOH-Consumer"
+        const val TOPIC_HEADER = "QOH-Topic"
+        const val PARTITION_HEADER = "QOH-Partition"
+        const val BROKER_HEADER = "QOH-Broker"
+        const val KEY_HEADER = "QOH-Message-Key"
+        const val NUMBER_HEADER = "QOH-Message-Number"
+
+        private val logger = LoggerFactory.getLogger(HttpMessageDispatcher::class.java)
     }
 }

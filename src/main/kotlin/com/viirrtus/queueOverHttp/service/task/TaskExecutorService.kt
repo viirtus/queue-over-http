@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 
 @Component
-class TaskExecutorService {
+open class TaskExecutorService {
     /**
      * For regular task execution.
      */
@@ -26,7 +26,7 @@ class TaskExecutorService {
      * Tasks are always executed in [executorsPool].
      *
      */
-    fun submit(task: DispatchTask<*>, delayMs: Long = 0) {
+    open fun submit(task: DispatchTask<*>, delayMs: Long = 0) {
         if (delayMs == 0L) {
             executorsPool.submit(task)
         } else {

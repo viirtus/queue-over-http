@@ -39,5 +39,4 @@ open class SpringContextConfig {
 
         return NoopPersistenceAdapter()
     }
-
 }

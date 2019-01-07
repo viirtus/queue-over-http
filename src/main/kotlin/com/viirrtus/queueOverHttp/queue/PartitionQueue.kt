@@ -1,17 +1,12 @@
 package com.viirrtus.queueOverHttp.queue
 
 import com.viirrtus.queueOverHttp.Application
-import com.viirrtus.queueOverHttp.dto.Consumer
 import com.viirrtus.queueOverHttp.service.QueueDrainerInterface
 import com.viirrtus.queueOverHttp.util.currentTimeMillis
-import com.viirrtus.queueOverHttp.util.hiResCurrentTimeNanos
 import io.reactivex.subjects.Subject
 import org.slf4j.LoggerFactory
-import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLongArray
 import java.util.concurrent.locks.ReentrantLock
 
@@ -34,12 +29,7 @@ import java.util.concurrent.locks.ReentrantLock
  * was compleated and queue perform commit request to native queue.
  * While chunk not commited, new messages cannot be consumed.
  */
-class PartitionQueue(
-        /**
-         * Consumer of this queue
-         */
-        private val consumer: Consumer,
-
+open class PartitionQueue(
         /**
          * Holder
          */
@@ -50,6 +40,8 @@ class PartitionQueue(
          */
         val associatedPartition: LocalTopicPartition
 ) {
+    val consumer = group.consumer
+
     val config = consumer.topics.find { it.matched(associatedPartition) }!!.config
 
     /**
@@ -320,19 +312,24 @@ class PartitionQueue(
      * Lock-free atomic method.
      */
     private fun markBit(messageNumber: Long) {
+        val difference = messageNumber - lastNormalCommitMessageNumber - 1
+
+        if (difference >= consumeFactor || difference < 0) {
+            //some desync detected
+            throw RuntimeException("Cannot commit message $messageNumber before commit last $consumeFactor messages.")
+        }
+
+        val index = (difference % consumeFactor).toInt()
+
+        val wordIndex = index / longWordSize
+        val wordBitIndex = index % longWordSize
+
         do {
-            val difference = messageNumber - lastNormalCommitMessageNumber - 1
-            val index = (difference % consumeFactor).toInt()
-
-            val wordIndex = index / longWordSize
-            val wordBitIndex = index % longWordSize
-
             val currentValue = commitedMask[wordIndex]
             val bitValue = currentValue.ushr(longWordSize - wordBitIndex - 1).and(1)
 
-            //some desync detected
-            if (difference > consumeFactor || bitValue == 1L) {
-                throw RuntimeException("Cannot commit message $messageNumber before commit last $consumeFactor messages.")
+            if (bitValue == 1L) {
+                throw RuntimeException("$messageNumber already was committed.")
             }
 
             val newValue = currentValue.or(1L.shl(longWordSize - wordBitIndex - 1))

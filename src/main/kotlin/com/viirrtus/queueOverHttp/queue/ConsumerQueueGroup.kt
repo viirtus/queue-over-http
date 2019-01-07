@@ -1,7 +1,6 @@
 package com.viirrtus.queueOverHttp.queue
 
 import com.viirrtus.queueOverHttp.dto.Consumer
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -114,7 +113,7 @@ class ConsumerQueueGroup(
     }
 
     fun createPartitionQueue(partition: LocalTopicPartition): PartitionQueue {
-        return PartitionQueue(consumer, this, partition)
+        return PartitionQueue(this, partition)
     }
 
     /**

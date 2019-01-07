@@ -3,17 +3,14 @@ package com.viirrtus.queueOverHttp.queue.kafka
 import com.viirrtus.queueOverHttp.Application
 import com.viirrtus.queueOverHttp.queue.*
 import com.viirrtus.queueOverHttp.util.hiResCurrentTimeNanos
-import org.apache.kafka.clients.NetworkClient
 import org.apache.kafka.clients.consumer.CommitFailedException
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
-import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient
 import org.apache.kafka.common.KafkaException
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.AuthenticationException
 import org.apache.kafka.common.errors.AuthorizationException
 import org.apache.kafka.common.errors.InterruptException
-import org.apache.kafka.common.network.Selectable
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.LinkedBlockingQueue
@@ -26,6 +23,12 @@ class KafkaNativeConsumerWrapper(consumer: InterruptedKafkaConsumer<String, Stri
     @Volatile
     private var isConsumerUnsubscribed = false
 
+    /**
+     * Indicate that current consumer instance was
+     * fully unsubscribed.
+     */
+    var isDead = false
+        private set
 
     override fun run() {
         Thread.currentThread().name = "Kafka-${group.consumer.broker}-${group.consumer.group.id}-${group.consumer.id}"
@@ -40,7 +43,7 @@ class KafkaNativeConsumerWrapper(consumer: InterruptedKafkaConsumer<String, Stri
                 val records = consumer.poll(Duration.ofMillis(100))
 
                 //optimize next iterators creation for nothing
-                if (records.isEmpty) {
+                if (records.isEmpty || isConsumerUnsubscribed) {
                     continue
                 }
 
@@ -57,15 +60,16 @@ class KafkaNativeConsumerWrapper(consumer: InterruptedKafkaConsumer<String, Stri
                         logger.debug("Push ${partitionRecords.size} records to $partition.")
                     }
 
-                    queue.push(partitionRecords.map { Message(it.value(), it.offset(), it.key()) })
+                    queue.push(partitionRecords.map { Message(it.value(), it.offset(), it.key(), hiResCurrentTimeNanos()) })
                 }
 
             } catch (e: Exception) {
                 logger.warn("Caught unexpected exception while working with $group. Consumer will be unsubscribed.", e)
                 //ref to this is still holding by adapter
 
+                //TODO memory leak in drainer
                 group.clear()
-                doUnsubscribe()
+                isConsumerUnsubscribed = true
             }
         }
 
@@ -211,6 +215,7 @@ class KafkaNativeConsumerWrapper(consumer: InterruptedKafkaConsumer<String, Stri
         try {
             consumer.unsubscribe()
             consumer.close()
+            isDead = true
         } catch (e: Exception) {
             logger.warn("An error occurred while unsubscribe.", e)
         }

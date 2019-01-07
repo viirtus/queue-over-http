@@ -2,7 +2,7 @@ version: "2"
 
 services:
   app:
-    image: viirrtus/queue-over-http:0.1.1
+    image: viirrtus/queue-over-http:0.1.3
     restart: unless-stopped
     command: --debug
     ports:

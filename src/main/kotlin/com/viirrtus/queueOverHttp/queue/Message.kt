@@ -18,7 +18,9 @@ data class Message(
          * Applicable only for Kafka.
          * Message partition key if specified.
          */
-        val key: String?
+        val key: String?,
+
+        val timestamp: Long
 ) {
     override fun toString(): String {
         return "${this::class.java.simpleName}[$body, $number]"

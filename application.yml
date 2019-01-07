@@ -15,5 +15,30 @@ app:
     - name: "Kafka"
       origin: "kafka"
       config:
-        bootstrap.servers: "localhost:9092"
-#        bootstrap.servers: "192.168.99.100:9092"
+#        bootstrap.servers: "10.100.80.47:9092"
+        bootstrap.servers: "192.168.99.100:9092"
+
+---
+
+spring:
+  profiles: test
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com:
+      viirrtus:
+        queueOverHttp: DEBUG
+
+app:
+  persistence:
+    file:
+      storageDirectory: "test_persist"
+  brokers:
+    - name: "Test-Broker"
+      origin: "kafka"
+      config:
+#        bootstrap.servers: "localhost:9092"
+        bootstrap.servers: "192.168.99.100:9092"

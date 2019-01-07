@@ -9,8 +9,6 @@ COPY settings.gradle /tmp/build/settings.gradle
 
 WORKDIR /tmp/build/
 
-#RUN apk add --no-cache curl
-#
 RUN ./gradlew buildArtifacts
 
 RUN cp artifacts/queue-over-http.jar /app.jar

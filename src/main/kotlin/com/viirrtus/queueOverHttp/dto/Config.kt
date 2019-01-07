@@ -1,5 +1,8 @@
 package com.viirrtus.queueOverHttp.dto
 
+import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
+
 /**
  * Consume strategy.
  */
@@ -13,6 +16,7 @@ data class Config(
          *
          * Each [concurrencyFactor] messages must be commited to native queue.
          */
+        @field:Positive
         val concurrencyFactor: Int = 1,
 
         /**
@@ -20,5 +24,6 @@ data class Config(
          * dispatched, this option allows to specify time tick in which
          * messages will be commited to native queue if they are already where dispatched.
          */
+        @field:PositiveOrZero
         val autoCommitPeriodMs: Long = 0
 )

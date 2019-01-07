@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Component
 
 @Component
-@ConfigurationProperties(prefix = "app")
+@ConfigurationProperties(prefix="app")
 class AppConfig {
     var brokers: List<BrokerConfig> = listOf()
     var persistence: Map<String, Any> = mutableMapOf()

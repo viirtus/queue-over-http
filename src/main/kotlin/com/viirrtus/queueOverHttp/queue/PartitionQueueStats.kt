@@ -1,6 +1,6 @@
 package com.viirrtus.queueOverHttp.queue
 
-data class PartitionQueueStats(
+data class PartitionQueueStats (
         val lastNormalCommitMessageNumber: Long,
         val lastCommitMessageNumber: Long,
         val lastForceCommitRequestMessageNumber: Long,

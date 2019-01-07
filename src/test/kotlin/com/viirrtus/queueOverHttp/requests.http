@@ -1,0 +1,60 @@
+POST localhost:8080/broker/subscription
+Content-Type: application/json
+
+{
+  "id": "my-first-consumer",
+  "group": {
+    "id": "consumers"
+  },
+  "broker": "Kafka",
+  "topics": [
+    {
+      "name": "slack.test",
+      "config": {
+        "concurrencyFactor": 10,
+        "autoCommitPeriodMs": 100
+      }
+    }
+  ],
+  "subscriptionMethod": {
+    "type": "http",
+    "delayOnErrorMs": 1000,
+    "uri": "<>",
+    "additionalHeaders": {
+      "Content-Type": "application/json"
+    }
+  }
+}
+
+###
+
+GET localhost:8080/broker/subscription
+
+###
+
+POST localhost:8080/broker/unsubscribe
+Content-Type: application/json
+
+{
+  "id": "my-first-consumer",
+  "group": {
+    "id": "consumers"
+  },
+  "broker": "Kafka",
+  "topics": [
+    {
+      "name": "mattermost.test",
+      "config": {
+        "concurrencyFactor": 10,
+        "autoCommitPeriodMs": 100
+      }
+    }
+  ],
+  "subscriptionMethod": {
+    "type": "http",
+    "delayOnErrorMs": 1000,
+    "uri": "https://mattermost.gubkin.ru/hooks/9ghz98njw3gwzjsdrb84mhe6pe"
+  }
+}
+
+###

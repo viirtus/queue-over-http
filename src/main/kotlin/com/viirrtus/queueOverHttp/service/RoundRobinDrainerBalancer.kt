@@ -1,6 +1,7 @@
 package com.viirrtus.queueOverHttp.service
 
 import com.viirrtus.queueOverHttp.queue.ConsumerQueueGroup
+import javax.annotation.PostConstruct
 
 /**
  * Balancer with round-robin strategy.
@@ -15,7 +16,8 @@ class RoundRobinDrainerBalancer(
 
     private val brokersIterator = RRIterator(brokers)
 
-    init {
+    @PostConstruct
+    fun start() {
         brokers.forEach { Thread(it).start() }
     }
 
